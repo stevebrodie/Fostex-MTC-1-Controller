@@ -4,6 +4,9 @@ Node.js controller for the Fostex MTC-1 SMPTE sync interface.
 Controls the MTC-1 via MIDI, with a browser web UI (tablet-friendly)
 and optional Stream Deck MK2 hardware surface.
 
+<img width="751" height="1137" alt="Untitled" src="https://github.com/user-attachments/assets/dbee6dc5-3b6a-4224-8bdb-3686642215ec" />
+
+
 ## Requirements
 
 - Node.js v18 or later — https://nodejs.org
