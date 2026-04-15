@@ -1,0 +1,15 @@
+{
+  "name": "mtc1-controller",
+  "version": "1.0.0",
+  "description": "Fostex MTC-1 controller with web UI and Stream Deck support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "midi": "^2.0.0",
+    "express": "^4.18.0",
+    "@elgato-stream-deck/node": "^7.0.0",
+    "sharp": "^0.33.0"
+  }
+}
