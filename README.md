@@ -3,10 +3,10 @@
 ## A free tool for musicians using Fostex R8/MTC-1 hardware. Built in the open, stays in the open
 
 ## Background
-For anyone, like me, who grew up in the 80s and 90s trying to make music the trevails of midi syn, Midi Timcode, LTC and SMPTE may well be familiar.
-As a young man I purchased a Fosex R8 8-track recorder which came with a free midi controller, the MTC-1. I couldn't ever make the MTC-1 do anything back then as I didn't have a computer; My sequencer was the Alesis HR-16 and MMT-8.
+For anyone, like me, who grew up in the 80s and 90s trying to make music the travails of midi syn, Midi Timcode, LTC and SMPTE may well be familiar.
+As a young man I purchased a Fostex R8 8-track recorder which came with a free midi controller, the MTC-1. I couldn't ever make the MTC-1 do anything back then as I didn't have a computer; My sequencer was the Alesis HR-16 and MMT-8.
 
-But now I do have a computer! :) The problem is that sending the necessary midi commands to the MTC-1 to make it Chase to SMPTE etc required a combination of midi notes being sent, with one being a 'SHIFT' key, and the timing apparently quite critical. Worse, the MTC-1 hd but 2 LEDs to provide user feedback on its condition. I did get this working with Logic but has each time it power cycles it needs to receive the the Chase to TC command anew, I needed a relable way to send those commands. hence this solution. If it helps anyone it would be marvellous to know. :)
+But now I do have a computer! :) The problem is that sending the necessary midi commands to the MTC-1 to make it Chase to SMPTE etc required a combination of midi notes being sent, with one being a 'SHIFT' key, and the timing apparently quite critical. Worse, the MTC-1 had but 2 LEDs to provide user feedback on its condition. I did get this working with Logic but has each time it power cycles it needs to receive the Chase to TC command anew, I needed a reliable way to send those commands. hence this solution. If it helps anyone it would be marvellous to know. :)
 
 ## Description
 
