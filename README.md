@@ -14,7 +14,7 @@ Node.js controller for the Fostex MTC-1 SMPTE sync interface.
 Controls the MTC-1 via MIDI, with a browser web UI (tablet-friendly)
 and optional Stream Deck MK2 hardware surface.
 
-<img width="751" height="1137" alt="Untitled" src="https://github.com/user-attachments/assets/dbee6dc5-3b6a-4224-8bdb-3686642215ec" />
+<img width="1498" height="2292" alt="mtc1 controller v0 2" src="https://github.com/user-attachments/assets/79da952e-dad6-4bad-83bf-11e871e5d633" />
 
 
 ## Requirements
@@ -48,9 +48,9 @@ The server detects it automatically — no extra config needed.
 Button layout (Stream Deck MK2, 5×3):
 
 ```
-[ Sys Reset ] [ MTC Out ON ] [ MTC Out OFF ] [ Chase ON ] [ Chase OFF ]
-[    Play   ] [    Stop    ] [    Record   ] [ Startup  ] [  RX TC   ]
-[   TRK 1  ] [   TRK 2   ] [    TRK 3   ] [  TRK 4  ] [  TRK 5-8 ]
+[ Sys Reset ] [ MTC Out ON ] [ MTC Out OFF ] [ Time Ref ] [ Start Seq ]
+[    Play   ] [    Stop    ] [    Record   ] [ Gen SMPTE ] [   RX TC  ]
+[   TRK 1  ] [   TRK 2   ] [    TRK 3   ] [   TRK 4  ] [  TRK 5-8 ]
 ```
 
 ## Session Startup Sequence
