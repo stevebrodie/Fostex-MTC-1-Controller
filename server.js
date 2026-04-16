@@ -46,11 +46,19 @@ let selectedOutPort = null;
 let selectedInPort  = null;
 let midiIn  = null;
 
+// Time Reference modes — from MTC-1 manual section 3-1-9
+const TIME_REF_MODES = [
+  { label: 'MTC',      normalNote: 49 },
+  { label: 'LTC+TACH', normalNote: 50 },
+  { label: 'LTC',      normalNote: 51 },
+  { label: 'TACH+DIR', normalNote: 52 },
+];
+
 // Controller state
 const state = {
   outPort:       null,
   inPort:        null,
-  chaseEnabled:  false,
+  timeRefIndex:  0,     // 0=MTC, 1=LTC+TACH, 2=LTC, 3=TACH+DIR
   mtcOutEnabled: false,
   generating:    false,
   rxTC:          '--:--:--:--',
@@ -144,8 +152,11 @@ const COMMANDS = {
   systemReset:     () => { midiOut.sendMessage([0xFF]); },
   mtcOutputOn:     () => sendShiftCommand(78, 61),                      // SHIFT=78, NORMAL=61
   mtcOutputOff:    () => sendShiftCommand(79, 61),                      // SHIFT=79, NORMAL=61
-  chaseEnable:     () => sendShiftCommand(78, 55),
-  chaseDisable:    () => sendShiftCommand(79, 55),
+  // Time Reference Selection — MTC-1 manual section 3-1-9 (SHIFT=82)
+  timeRefMTC:      () => sendShiftCommand(82, 49),   // MTC
+  timeRefLtcTach:  () => sendShiftCommand(82, 50),   // LTC with TACH & DIR
+  timeRefLtc:      () => sendShiftCommand(82, 51),   // LTC only
+  timeRefTachDir:  () => sendShiftCommand(82, 52),   // TACH & DIR only
   generateSmpte:   () => sendShiftCommand(78, 56),                      // SHIFT=78, NORMAL=56 confirmed
   stopSmpte:       () => sendShiftCommand(79, 56),                      // SHIFT=79, NORMAL=56
   // Transport — Fostex channel voice messages (MTC-1 manual Section 3-1)
@@ -174,8 +185,8 @@ async function sessionStartup() {
   await COMMANDS.mtcOutputOn();
   state.mtcOutEnabled = true;
   await sleep(50);
-  await COMMANDS.chaseEnable();
-  state.chaseEnabled = true;
+  await COMMANDS.timeRefMTC();
+  state.timeRefIndex = 0;
   log('Startup sequence complete');
   broadcastState();
   updateSDButtons();
@@ -242,21 +253,21 @@ function broadcastState() {
 
 // ── Stream Deck ───────────────────────────────────────────────────────────────
 const SD_BUTTONS = [
-  { key: 0,  label: 'SYS\nRESET',  color: [80,20,20],  action: 'systemReset'   },
-  { key: 1,  label: 'MTC\nOUT ON', color: [20,60,20],  action: 'mtcOutputOn'   },
-  { key: 2,  label: 'MTC\nOUT OFF',color: [60,30,20],  action: 'mtcOutputOff'  },
-  { key: 3,  label: 'CHASE\nON',   color: [20,80,40],  action: 'chaseEnable'   },
-  { key: 4,  label: 'CHASE\nOFF',  color: [60,40,20],  action: 'chaseDisable'  },
-  { key: 5,  label: '▶ PLAY',      color: [20,80,20],  action: 'mmcPlay'       },
-  { key: 6,  label: '■ STOP',      color: [80,20,20],  action: 'mmcStop'       },
-  { key: 7,  label: '● REC',       color: [80,20,20],  action: 'mmcRecord'     },
-  { key: 8,  label: 'START\nSEQ',  color: [20,40,80],  action: 'sessionStartup'},
-  { key: 9,  label: 'RX TC',       color: [20,20,60],  action: null            },
-  { key: 10, label: 'TRK 1',       color: [40,20,60],  action: 'armTrack1'     },
-  { key: 11, label: 'TRK 2',       color: [40,20,60],  action: 'armTrack2'     },
-  { key: 12, label: 'TRK 3',       color: [40,20,60],  action: 'armTrack3'     },
-  { key: 13, label: 'TRK 4',       color: [40,20,60],  action: 'armTrack4'     },
-  { key: 14, label: 'TRK 5-8',     color: [40,20,60],  action: 'armTracks58'   },
+  { key: 0,  label: 'SYS\nRESET',   color: [80,20,20],  action: 'systemReset'   },
+  { key: 1,  label: 'MTC\nOUT ON',  color: [20,60,20],  action: 'mtcOutputOn'   },
+  { key: 2,  label: 'MTC\nOUT OFF', color: [60,30,20],  action: 'mtcOutputOff'  },
+  { key: 3,  label: 'TIME\nREF',    color: [20,40,80],  action: 'timeRefCycle'  },
+  { key: 4,  label: 'START\nSEQ',   color: [20,40,80],  action: 'sessionStartup'},
+  { key: 5,  label: '▶ PLAY',       color: [20,80,20],  action: 'mmcPlay'       },
+  { key: 6,  label: '■ STOP',       color: [80,20,20],  action: 'mmcStop'       },
+  { key: 7,  label: '● REC',        color: [80,20,20],  action: 'mmcRecord'     },
+  { key: 8,  label: 'GEN\nSMPTE',   color: [60,40,20],  action: 'generateSmpte' },
+  { key: 9,  label: 'RX TC',        color: [20,20,60],  action: null            },
+  { key: 10, label: 'TRK 1',        color: [40,20,60],  action: 'armTrack1'     },
+  { key: 11, label: 'TRK 2',        color: [40,20,60],  action: 'armTrack2'     },
+  { key: 12, label: 'TRK 3',        color: [40,20,60],  action: 'armTrack3'     },
+  { key: 13, label: 'TRK 4',        color: [40,20,60],  action: 'armTrack4'     },
+  { key: 14, label: 'TRK 5-8',      color: [40,20,60],  action: 'armTracks58'   },
 ];
 
 function makeKeyImage(label, bgColor, active = false) {
@@ -285,7 +296,9 @@ async function initStreamDeck() {
   streamDeck.clearPanel();
   for (const btn of SD_BUTTONS) {
     try {
-      const img = makeKeyImage(btn.label, btn.color);
+      const img = btn.action === 'timeRefCycle'
+        ? makeTimeRefKeyImage(TIME_REF_MODES[state.timeRefIndex].label)
+        : makeKeyImage(btn.label, btn.color);
       if (img) await streamDeck.fillKeyBuffer(btn.key, img, { format: 'rgba' });
     } catch(_) {}
   }
@@ -298,13 +311,35 @@ async function initStreamDeck() {
   streamDeck.on('error', e => console.error('Stream Deck error:', e));
 }
 
+function makeTimeRefKeyImage(modeLabel) {
+  if (!createCanvas) return null;
+  const size = streamDeck ? streamDeck.ICON_SIZE : 72;
+  const canvas = createCanvas(size, size);
+  const ctx    = canvas.getContext('2d');
+  ctx.fillStyle = '#0a1828';
+  ctx.fillRect(0, 0, size, size);
+  // Static top label — small and muted
+  ctx.fillStyle = 'rgba(77,184,255,0.5)';
+  ctx.font = `${Math.floor(size / 7.5)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TIME REF', size / 2, size * 0.30);
+  // Dynamic mode value — larger and bright
+  ctx.fillStyle = '#4db8ff';
+  ctx.font = `bold ${Math.floor(size / 4.5)}px sans-serif`;
+  ctx.fillText(modeLabel, size / 2, size * 0.65);
+  return canvas.toBuffer('raw');
+}
+
 async function updateSDButtons() {
   if (!streamDeck) return;
-  const chaseBtn = SD_BUTTONS.find(b => b.action === 'chaseEnable');
-  if (chaseBtn) {
+  // Update Time Ref button with current mode label
+  const timeRefBtn = SD_BUTTONS.find(b => b.action === 'timeRefCycle');
+  if (timeRefBtn) {
     try {
-      const img = makeKeyImage(chaseBtn.label, chaseBtn.color, state.chaseEnabled);
-      if (img) await streamDeck.fillKeyBuffer(chaseBtn.key, img, { format: 'rgba' });
+      const mode = TIME_REF_MODES[state.timeRefIndex];
+      const img = makeTimeRefKeyImage(mode.label);
+      if (img) await streamDeck.fillKeyBuffer(timeRefBtn.key, img, { format: 'rgba' });
     } catch(_) {}
   }
 }
@@ -325,7 +360,7 @@ async function handleAction(action, param) {
   switch (action) {
     case 'systemReset':
       COMMANDS.systemReset();
-      state.chaseEnabled  = false;
+      state.timeRefIndex  = 0;
       state.mtcOutEnabled = false;
       state.generating    = false;
       log('System Reset sent');
@@ -340,16 +375,13 @@ async function handleAction(action, param) {
       state.mtcOutEnabled = false;
       log('MTC Output OFF');
       break;
-    case 'chaseEnable':
-      await COMMANDS.chaseEnable();
-      state.chaseEnabled = true;
-      log('Chase SMPTE enabled');
+    case 'timeRefCycle': {
+      state.timeRefIndex = (state.timeRefIndex + 1) % TIME_REF_MODES.length;
+      const mode = TIME_REF_MODES[state.timeRefIndex];
+      if (midiOut) await sendShiftCommand(82, mode.normalNote);
+      log(`Time Reference: ${mode.label}${midiOut ? '' : ' (no port — UI only)'}`);
       break;
-    case 'chaseDisable':
-      await COMMANDS.chaseDisable();
-      state.chaseEnabled = false;
-      log('Chase SMPTE disabled');
-      break;
+    }
     case 'generateSmpte':
       await COMMANDS.generateSmpte();
       state.generating = true;
@@ -615,6 +647,10 @@ const HTML = `<!DOCTYPE html>
   .btn-toggle.is-on  { color:var(--green); border-color:var(--green); background:var(--green-d); box-shadow:0 0 8px var(--green); }
   .btn-toggle.is-off { color:var(--amber); border-color:var(--amber); background:var(--amber-d); }
 
+  .btn-two-line { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 4px; }
+  .btn-label-top { font-size:9px; opacity:0.55; letter-spacing:0.12em; font-weight:600; }
+  .btn-value-bottom { font-size:14px; font-weight:700; }
+
   .track-btn { font-size:12px; padding:9px 4px; }
   .track-armed { color:var(--red); border-color:var(--red); background:var(--red-d); box-shadow:0 0 8px var(--red); }
 
@@ -687,13 +723,16 @@ const HTML = `<!DOCTYPE html>
     <div class="card-body">
       <div class="btn-grid btn-grid-4" style="margin-bottom:8px">
         <button class="btn-blue" onclick="action('sessionStartup')" style="grid-column:span 4">
-          ▶▶ Full Session Startup (Reset → MTC Out ON → Chase ON)
+          ▶▶ Full Session Startup (Reset → MTC Out ON → Time Ref: MTC)
         </button>
       </div>
       <div class="btn-grid btn-grid-4">
         <button class="btn-red"  onclick="action('systemReset')">Sys Reset</button>
         <button id="btn-mtcout" class="btn-toggle" onclick="toggleMtcOut()">MTC Out</button>
-        <button id="btn-chase"  class="btn-toggle" onclick="toggleChase()">Chase</button>
+        <button id="btn-timeref" class="btn-toggle btn-two-line" onclick="cycleTimeRef()">
+          <span class="btn-label-top">TIME REFERENCE</span>
+          <span class="btn-value-bottom" id="timeref-value">MTC</span>
+        </button>
         <button id="btn-gen"    class="btn-toggle" onclick="toggleGen()">Gen SMPTE</button>
       </div>
     </div>
@@ -782,8 +821,14 @@ const HTML = `<!DOCTYPE html>
 
   function applyState(s) {
     setToggle('btn-mtcout', s.mtcOutEnabled);
-    setToggle('btn-chase',  s.chaseEnabled);
     setToggle('btn-gen',    s.generating);
+    // Update time ref button
+    if (s.timeRefIndex !== undefined) {
+      const modes = ['MTC', 'LTC+TACH', 'LTC', 'TACH+DIR'];
+      const valEl = document.getElementById('timeref-value');
+      if (valEl) valEl.textContent = modes[s.timeRefIndex] || 'MTC';
+      setToggle('btn-timeref', s.timeRefIndex === 0);
+    }
     if (s.outPort) setStatus('OUT: ' + s.outPort, '#00e87a');
   }
 
@@ -798,9 +843,8 @@ const HTML = `<!DOCTYPE html>
     const on = document.getElementById('btn-mtcout').classList.contains('is-on');
     action(on ? 'mtcOutputOff' : 'mtcOutputOn');
   }
-  function toggleChase() {
-    const on = document.getElementById('btn-chase').classList.contains('is-on');
-    action(on ? 'chaseDisable' : 'chaseEnable');
+  function cycleTimeRef() {
+    action('timeRefCycle');
   }
   function toggleGen() {
     const on = document.getElementById('btn-gen').classList.contains('is-on');
