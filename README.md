@@ -56,22 +56,12 @@ Button layout (Stream Deck MK2, 5×3):
 ## Session Startup Sequence
 
 Each power cycle of the MTC-1 requires this sequence:
-1. System Reset (0xFF) — returns MTC-1 to defaults
+1. System Reset (0xFF) — returns MTC-1 to defaults (not strictly necessary but can be helpful to return you to a known state)
 2. MTC Output ON — enables MTC on MIDI OUT (off by default!)
-3. Chase SMPTE ON — enables tape chase mode
+3. Time Reference Selection: MTC — enables tape chase mode
 
 The **Full Session Startup** button does all three automatically.
 
-## MIDI Port Setup
-
-| MT4 Port       | Connected to       | Role                        |
-|----------------|--------------------|-----------------------------|
-| MT4 MIDI OUT 3 | MTC-1 MIDI IN      | Commands from controller    |
-| MT4 MIDI IN 1  | MTC-1 MIDI OUT     | MTC timecode back to DAW    |
-
-In the web UI:
-- **MTC-1 OUT** = select MT4 MIDI OUT 3 (sends commands to MTC-1)
-- **MTC-1 IN**  = select MT4 MIDI IN 1  (receives MTC from MTC-1)
 
 ## Command Reference (Corrected — from session log + manual)
 
@@ -79,10 +69,12 @@ In the web UI:
 |-----------------|------------|-------------|
 | MTC Output ON   | 78         | 61          |
 | MTC Output OFF  | 79         | 61          |
-| Chase Enable    | 78         | 55 (TBC)   |
-| Chase Disable   | 79         | 55 (TBC)   |
-| Generate SMPTE  | 78         | 47          |
-| Stop SMPTE      | 79         | 47          |
+|Time Reference selection: MTC | 82 | 49 |
+|Time Reference selection: LTC with TACH & DIR | 82 | 50 |
+|Time Reference selection: LTC | 82 | 51 |
+|Time Reference selection: TACH & DIR | 82 | 52 |
+| Generate SMPTE  | 78         | 56          |
+| Stop SMPTE      | 79         | 56          |
 | Arm Track n     | 83         | 36+n        |
 | Disarm Track n  | 84         | 36+n        |
 
@@ -91,6 +83,5 @@ Gap between SHIFT note-on and NORMAL note-on: 20ms (adjustable in server.js `GAP
 ## Notes
 
 - Track arm note numbers from MTC-1 manual shift table (Track 1 = note 37, Track 8 = note 44)
-- Chase SMPTE normal note (55) is marked TBC — confirm from manual or test
 - System Reset (0xFF) — MTC-1 MIDI IN LED does not flash for this message, this is normal
 - MMC uses old Fostex format, device ID 127
