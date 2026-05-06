@@ -1,4 +1,4 @@
-# Brodex Controller — Electron Era Roadmap
+# Fostex MTC-1 Controller — Electron Era Roadmap
 
 *Features deferred from the current Node.js/browser implementation, to be built once the app is packaged as an Electron application. Electron provides the necessary OS-level access (filesystem, native audio API) that makes these features practical.*
 
